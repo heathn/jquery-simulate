@@ -3,57 +3,79 @@ module.exports = function( grunt ) {
 
 "use strict";
 
-grunt.loadNpmTasks( "grunt-update-submodules" );
+var files = [
+	"jquery.simulate.js",
+	"Gruntfile.js",
+	"test/*.js",
+	"test/unit/*.js"
+];
+
+grunt.loadNpmTasks( "grunt-bowercopy" );
 grunt.loadNpmTasks( "grunt-compare-size" );
 grunt.loadNpmTasks( "grunt-git-authors" );
+grunt.loadNpmTasks( "grunt-contrib-qunit" );
+grunt.loadNpmTasks( "grunt-contrib-uglify" );
+grunt.loadNpmTasks( "grunt-contrib-jshint" );
 
 grunt.initConfig({
-	pkg: "<json:package.json>",
+	pkg: grunt.file.readJSON( "package.json" ),
 
-	meta: {
-		banner: "/*! jQuery Simulate v@<%= pkg.version %> http://github.com/jquery/jquery-simulate | jquery.org/license */"
-	},
+	bowercopy: {
+		all: {
+			options: {
+				destPrefix: "external"
+			},
+			files: {
+				"qunit/qunit.js": "qunit/qunit/qunit.js",
+				"qunit/qunit.css": "qunit/qunit/qunit.css",
+				"qunit/LICENSE.txt": "qunit/LICENSE.txt",
 
-	lint: {
-		src: [ "jquery.simulate.js" ],
-		grunt: "grunt.js",
-		test: [ "test/*.js", "test/unit/*.js" ]
-	},
+				"jquery-1.6.0/jquery.js": "jquery-1.6.0/jquery.js",
+				"jquery-1.6.0/MIT-LICENSE.txt": "jquery-1.6.0/MIT-LICENSE.txt",
 
-	jshint: (function() {
-		function parserc( path ) {
-			var rc = grunt.file.readJSON( (path || "") + ".jshintrc" ),
-				settings = {
-					options: rc,
-					globals: rc.globals || {}
-				};
+				"jquery-1.6.1/jquery.js": "jquery-1.6.1/jquery.js",
+				"jquery-1.6.1/MIT-LICENSE.txt": "jquery-1.6.1/MIT-LICENSE.txt",
 
-			(rc.predef || []).forEach(function( prop ) {
-				settings.globals[ prop ] = true;
-			});
-			delete rc.predef;
+				"jquery-1.6.2/jquery.js": "jquery-1.6.2/jquery.js",
+				"jquery-1.6.2/MIT-LICENSE.txt": "jquery-1.6.2/MIT-LICENSE.txt",
 
-			return settings;
+				"jquery-1.6.3/jquery.js": "jquery-1.6.3/jquery.js",
+				"jquery-1.6.3/MIT-LICENSE.txt": "jquery-1.6.3/MIT-LICENSE.txt",
+
+				"jquery-1.6.4/jquery.js": "jquery-1.6.4/jquery.js",
+				"jquery-1.6.4/MIT-LICENSE.txt": "jquery-1.6.4/MIT-LICENSE.txt",
+
+				"jquery-1.7.0/jquery.js": "jquery-1.7.0/jquery.js",
+				"jquery-1.7.0/MIT-LICENSE.txt": "jquery-1.7.0/MIT-LICENSE.txt",
+
+				"jquery-1.7.1/jquery.js": "jquery-1.7.1/jquery.js",
+				"jquery-1.7.1/MIT-LICENSE.txt": "jquery-1.7.1/MIT-LICENSE.txt",
+
+				"jquery-1.7.2/jquery.js": "jquery-1.7.2/jquery.js",
+				"jquery-1.7.2/MIT-LICENSE.txt": "jquery-1.7.2/MIT-LICENSE.txt"
+			}
 		}
+	},
 
-		return {
-			src: parserc(),
-			grunt: parserc(),
-			test: parserc( "test/" )
-		};
-	})(),
+	jshint: {
+		options: {
+			jshintrc: true
+		},
+		all: files
+	},
 
 	qunit: {
 		files: "test/index.html"
 	},
 
-	min: {
-		"dist/jquery.simulate.min.js": [ "<banner>", "dist/jquery.simulate.js" ]
-	},
-
-	watch: {
-		files: [ "<config:lint.src>", "<config:lint.test>", "<config:lint.grunt>" ],
-		tasks: "default"
+	uglify: {
+		options: {
+			banner: "/*! jQuery Simulate v@<%= pkg.version %> http://github.com/jquery/jquery-simulate | jquery.org/license */"
+		},
+		build: {
+			src: "dist/jquery.simulate.js",
+			dest: "dist/jquery.simulate.min.js"
+		}
 	},
 
 	compare_size: {
@@ -61,10 +83,8 @@ grunt.initConfig({
 	}
 });
 
-
-
-grunt.registerHelper( "git-date", function( fn ) {
-	grunt.utils.spawn({
+function git_date( fn ) {
+	grunt.util.spawn({
 		cmd: "git",
 		args: [ "log", "-1", "--pretty=format:%ad" ]
 	}, function( error, result ) {
@@ -75,7 +95,7 @@ grunt.registerHelper( "git-date", function( fn ) {
 
 		fn( null, result );
 	});
-});
+}
 
 grunt.registerTask( "max", function() {
 	var dist = "dist/jquery.simulate.js",
@@ -86,7 +106,7 @@ grunt.registerTask( "max", function() {
 		version += " " + process.env.COMMIT;
 	}
 
-	grunt.helper( "git-date", function( error, date ) {
+	git_date(function( error, date ) {
 		if ( error ) {
 			return done( false );
 		}
@@ -143,7 +163,7 @@ grunt.registerTask( "manifest", function() {
 	}, null, "\t" ) );
 });
 
-grunt.registerTask( "default", "lint update_submodules qunit build compare_size" );
-grunt.registerTask( "build", "max min" );
+grunt.registerTask( "default", ["jshint", "qunit", "build", "compare_size"] );
+grunt.registerTask( "build", ["max", "uglify"] );
 
 };
